@@ -75,7 +75,8 @@ export default function QuizPage() {
   // Results screen
   if (results) {
     const pct = results.percentage;
-    const circumference = 2 * Math.PI * 60;
+    const radius = 75;
+    const circumference = 2 * Math.PI * radius;
     const dashoffset = circumference - (pct / 100) * circumference;
     const ringColor = pct >= 80 ? '#10b981' : pct >= 60 ? '#f59e0b' : '#ef4444';
 
@@ -87,22 +88,43 @@ export default function QuizPage() {
         <div className="quiz-page-inner" style={{ marginTop: 40 }}>
           <div className="results-card">
             <div className="results-score-ring">
-              <svg width="150" height="150" viewBox="0 0 150 150">
-                <circle cx="75" cy="75" r="60" fill="none" stroke="var(--bg-elevated)" strokeWidth="12" />
-                <circle
-                  cx="75" cy="75" r="60" fill="none"
-                  stroke={ringColor} strokeWidth="12" strokeLinecap="round"
-                  strokeDasharray={circumference} strokeDashoffset={dashoffset}
-                  style={{ transition: 'stroke-dashoffset 1s ease' }}
-                />
-              </svg>
-              <div className="results-score-text">
-                <div className="results-percentage" style={{ color: ringColor }}>{pct}%</div>
-                <div className="results-label">Score</div>
-              </div>
-            </div>
+  <svg width="190" height="190" viewBox="0 0 190 190">
+    <circle
+      cx="95"
+      cy="95"
+      r={radius}
+      fill="none"
+      stroke="var(--bg-elevated)"
+      strokeWidth="14"
+    />
 
-            <h2 className="results-title">{results.message}</h2>
+    <circle
+      cx="95"
+      cy="95"
+      r={radius}
+      fill="none"
+      stroke={ringColor}
+      strokeWidth="14"
+      strokeLinecap="round"
+      strokeDasharray={circumference}
+      strokeDashoffset={dashoffset}
+      style={{ transition: 'stroke-dashoffset 1s ease' }}
+    />
+  </svg>
+
+  <div className="results-score-text">
+    <div
+      className="results-percentage"
+      style={{ color: ringColor, fontSize: '2.5rem' }}
+    >
+      {pct}%
+    </div>
+
+    <div className="results-label">Score</div>
+  </div>
+</div>
+
+            <h2 className="results-title" style={{color:'blue'}}>{results.message}</h2>
             <p className="results-subtitle">
               You scored {results.score} out of {results.totalQuestions}
             </p>

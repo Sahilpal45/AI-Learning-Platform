@@ -21,6 +21,7 @@
     "node-fetch": "^3.3.2",
     "openai": "^6.39.0",
     "pdf-parse": "^2.4.5",
+    "tesseract.js": "^7.0.0",
     "uuid": "^14.0.0"
   }
 }
