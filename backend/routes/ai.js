@@ -154,46 +154,41 @@ Use markdown formatting.
 });
 
 // Generate summary
-router.post("/summary/:bookId", auth, async (req, res) => {
-  try {
-    const book = await Book.findOne({
-      _id: req.params.bookId,
-      user: req.user._id,
-    });
-
-    if (!book) {
-      return res.status(404).json({
-        error: "Book not found",
+router.post(
+  "/summary/:bookId",
+  auth,
+  async (req, res) => {
+    try {
+      const book = await Book.findOne({
+        _id: req.params.bookId,
+        user: req.user._id,
       });
-    }
 
-    // Return cached summary
-    if (book.summary) {
-      return res.json({
-        summary: book.summary,
-        topics: book.topics || [],
-        takeaways: book.takeaways || [],
-      });
-    }
+      if (!book) {
+        return res.status(404).json({
+          error: "Book not found",
+        });
+      }
 
-    // Validate extracted text
-    const extractedText = (book.extractedText || "").trim();
+      if (book.summary) {
+        return res.json({
+          summary: book.summary,
+          topics: book.topics,
+        });
+      }
 
-    if (!extractedText || extractedText.length < 50) {
-      return res.status(400).json({
-        error:
-          "This PDF appears to be scanned/image-based. Text extraction failed. Please use OCR before generating summary.",
-      });
-    }
+      const textPreview =
+        book.extractedText?.substring(
+          0,
+          2000
+        ) || "No content available";
 
-    // Use larger preview
-    const textPreview = extractedText.substring(0, 8000);
+      const messages = [
+        {
+          role: "user",
 
-    const messages = [
-      {
-        role: "user",
-        content: `
-Analyze the book "${book.title}".
+          content: `
+Analyze the book "${book.title}"
 
 Return ONLY valid JSON.
 
@@ -206,54 +201,66 @@ Return ONLY valid JSON.
 Book Content:
 ${textPreview}
 `,
-      },
-    ];
+        },
+      ];
 
-    const response = await callAI(
-      "You are an expert book analyst. Return only valid JSON.",
-      messages,
-      2000
-    );
+      const response = await callAI(
+        "You are an expert book analyst. Return only JSON.",
+        messages,
+        1500
+      );
 
-    let parsed;
+      let parsed;
 
-    try {
-      const cleaned = response
-        .replace(/```json/g, "")
-        .replace(/```/g, "")
-        .trim();
+      try {
+        const cleaned = response
+          .replace(/```json/g, "")
+          .replace(/```/g, "")
+          .trim();
 
-      parsed = JSON.parse(cleaned);
+        const jsonMatch =
+          cleaned.match(/\{[\s\S]*\}/);
+
+        parsed = JSON.parse(
+          jsonMatch
+            ? jsonMatch[0]
+            : cleaned
+        );
+      } catch (err) {
+        parsed = {
+          summary: response,
+          topics: [],
+          takeaways: [],
+        };
+      }
+
+      book.summary =
+        parsed.summary || response;
+
+      book.topics = parsed.topics || [];
+
+      await book.save();
+
+      res.json({
+        summary: book.summary,
+        topics: book.topics,
+        takeaways:
+          parsed.takeaways || [],
+      });
     } catch (err) {
-      console.error("JSON Parse Error:", err);
+      console.error(
+        "Summary error:",
+        err
+      );
 
-      parsed = {
-        summary: response,
-        topics: [],
-        takeaways: [],
-      };
+      res.status(500).json({
+        error:
+          err.message ||
+          "Failed to generate summary",
+      });
     }
-
-    // Save to DB
-    book.summary = parsed.summary || "No summary generated";
-    book.topics = parsed.topics || [];
-    book.takeaways = parsed.takeaways || [];
-
-    await book.save();
-
-    res.json({
-      summary: book.summary,
-      topics: book.topics,
-      takeaways: book.takeaways,
-    });
-  } catch (err) {
-    console.error("Summary error:", err);
-
-    res.status(500).json({
-      error: err.message || "Failed to generate summary",
-    });
   }
-});
+);
 
 // Explain topic
 router.post(
