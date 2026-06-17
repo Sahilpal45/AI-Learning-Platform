@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const AuthContext = createContext(null);
 
-export const api = axios.create({ baseURL: 'http://localhost:5000/api' });
+export const api = axios.create({ baseURL: 'https://ai-learning-platform-tsas.onrender.com/api' });
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
