@@ -16,7 +16,7 @@ const limiter = rateLimit({
 
 app.use(limiter);
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'https://ai-learning-platform-juau.vercel.app/',
+  origin: process.env.CLIENT_URL || 'https://ai-learning-platform-juau.vercel.app',
   credentials: true
 }));
 app.use(express.json({ limit: '50mb' }));
